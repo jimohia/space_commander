@@ -114,6 +114,8 @@ class Enemy(pygame.sprite.Sprite):
             )
         self.speed = random.randint(3,6)
         self.last_shot = pygame.time.get_ticks()
+        
+        # Sprite Groups for Enemy Lasers
         self.sprites = all_sprites
         self.lasers = enemy_lasers
     # Define the enemy's frame updates based on speed
@@ -126,7 +128,7 @@ class Enemy(pygame.sprite.Sprite):
     def shoot(self):
         """ Fires enemy lasers"""
         current_time = pygame.time.get_ticks()
-        if current_time - self.last_shot > 500:
+        if current_time - self.last_shot > 1500:
             self.last_shot = current_time
             laser = EnemyLaser(self.rect.x, self.rect.y)
             self.sprites.add(laser)
@@ -232,7 +234,8 @@ while running:
     screen.fill((0, 0, 0))    
     # Draw the player on the screen
     for entity in all_sprites:
-        screen.blit(entity.surf, (entity.rect))    
+        screen.blit(entity.surf, (entity.rect)) 
+        
     # Check for player collisions
     if pygame.sprite.spritecollideany(player, asteroids):
         player.kill()
@@ -240,8 +243,18 @@ while running:
     if pygame.sprite.spritecollideany(player, enemies):
         player.kill()
         running = False
+    if pygame.sprite.spritecollideany(player, enemy_lasers):
+        player.kill()
+        running = False
+        
     # Check for NPO collisions
-    collisions = pygame.sprite.groupcollide(asteroids, enemies, False, True)
+    collisions = pygame.sprite.groupcollide(
+        asteroids, enemies, False, True)
+    collisions = pygame.sprite.groupcollide(
+        asteroids, enemy_lasers, False, True)
+    collisions = pygame.sprite.groupcollide(
+        enemies, enemy_lasers, True, True)
+    
     # Flip (update) the display
     pygame.display.flip()    
     #Lock framerate
