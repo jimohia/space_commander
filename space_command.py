@@ -23,6 +23,7 @@ from pygame.locals import (
     KEYDOWN,
     QUIT    
     )
+
 #Load pygame mixer for songs and sfx
 pygame.mixer.init()
 pygame.mixer.music.load('space_song.wav')
@@ -73,7 +74,7 @@ class Asteroid(pygame.sprite.Sprite):
                 random.randint(screen_width + 20, screen_width + 100),
                 random.randint(0, screen_height))
                 )
-        self.speed = random.randint(1,3)        
+        self.speed = random.randint(4,6)        
     # Define the Asteroid's frame updates based on 'speed'
     def update(self):
         self.rect.move_ip(-self.speed, 0)
@@ -93,7 +94,7 @@ class Galaxy(pygame.sprite.Sprite):
                 random.randint(screen_width+20, screen_width + 100),
                 random.randint(0, screen_height))
             )
-        self.speed = random.randint(1,3)        
+        self.speed = random.randint(1,2)        
     # Define the Galaxy's frame updates based on 'speed'
     def update(self):
         self.rect.move_ip(-self.speed, 0)
@@ -118,6 +119,7 @@ class Enemy(pygame.sprite.Sprite):
         # Sprite Groups for Enemy Lasers
         self.sprites = all_sprites
         self.lasers = enemy_lasers
+        
     # Define the enemy's frame updates based on speed
     def update(self):
         self.rect.move_ip(-self.speed, 0)
@@ -131,6 +133,8 @@ class Enemy(pygame.sprite.Sprite):
         if current_time - self.last_shot > 1500:
             self.last_shot = current_time
             laser = EnemyLaser(self.rect.x, self.rect.y)
+            enemy_laser_wav.play()
+            enemy_laser_wav.set_volume(0.5)
             self.sprites.add(laser)
             self.lasers.add(laser)
         
@@ -186,6 +190,10 @@ all_sprites = pygame.sprite.Group()
 all_sprites.add(player)
 enemy_lasers = pygame.sprite.Group()
 
+# Load sounds for the game here
+enemy_laser_wav = pygame.mixer.Sound('fire_laser.wav')
+explosion_wav = pygame.mixer.Sound('explosion.wav')
+
     ### Game Loop
 # Run variable for main loop
 running = True
@@ -238,22 +246,29 @@ while running:
         
     # Check for player collisions
     if pygame.sprite.spritecollideany(player, asteroids):
+        explosion_wav.play()
         player.kill()
         running = False
     if pygame.sprite.spritecollideany(player, enemies):
+        explosion_wav.play()
         player.kill()
         running = False
     if pygame.sprite.spritecollideany(player, enemy_lasers):
+        explosion_wav.play()
         player.kill()
         running = False
         
     # Check for NPO collisions
-    collisions = pygame.sprite.groupcollide(
+    enemy_hit_asteroid = pygame.sprite.groupcollide(
         asteroids, enemies, False, True)
+    for hit in enemy_hit_asteroid:
+        explosion_wav.play()
     collisions = pygame.sprite.groupcollide(
         asteroids, enemy_lasers, False, True)
-    collisions = pygame.sprite.groupcollide(
+    enemy_hit_enemy = pygame.sprite.groupcollide(
         enemies, enemy_lasers, True, True)
+    for hit in enemy_hit_enemy:
+        explosion_wav.play()
     
     # Flip (update) the display
     pygame.display.flip()    
