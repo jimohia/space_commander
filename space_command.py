@@ -19,6 +19,7 @@ from pygame.locals import (
     K_DOWN,
     K_LEFT,
     K_RIGHT,
+    K_SPACE,
     K_ESCAPE,
     KEYDOWN,
     QUIT    
@@ -40,17 +41,23 @@ class Player(pygame.sprite.Sprite):
         super(Player, self).__init__()
         self.surf = pygame.image.load('tie_fighter.png').convert_alpha()
         self.surf.set_colorkey((255, 255, 254), RLEACCEL)
-        self.rect = self.surf.get_rect()    
+        self.rect = self.surf.get_rect()
+        self.last_shot = pygame.time.get_ticks()
+        # Sprite Groups for Player Lasers
+        self.sprites = all_sprites
+        self.lasers = player_lasers
     # Def func() Move the Sprite based on player keypresses
     def update(self, pressed_keys):
         if pressed_keys[K_UP]:
-            self.rect.move_ip(0, -2)
+            self.rect.move_ip(0, -4)
         if pressed_keys[K_DOWN]:
-            self.rect.move_ip(0, 2)
+            self.rect.move_ip(0, 4)
         if pressed_keys[K_LEFT]:
-            self.rect.move_ip(-2, 0)
+            self.rect.move_ip(-4, 0)
         if pressed_keys[K_RIGHT]:
-            self.rect.move_ip(2, 0)
+            self.rect.move_ip(4 , 0)
+        if pressed_keys[K_SPACE]:
+            self.player_shoot()
             # Keep player on the screen
         if self.rect.left < 0:
             self.rect.left = 0
@@ -60,6 +67,33 @@ class Player(pygame.sprite.Sprite):
             self.rect.top = 0
         if self.rect.bottom >= screen_height:
             self.rect.bottom = screen_height
+    def player_shoot(self):
+        """ Fires player (TIE) lasers"""
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_shot > 250:
+            self.last_shot = current_time
+            laser = Laser(self.rect.right, self.rect.centery)
+            player_laser_wav.play()
+            player_laser_wav.set_volume(0.5)
+            self.sprites.add(laser)
+            self.lasers.add(laser)    
+# Define Laser Class by extending Sprite
+class Laser(pygame.sprite.Sprite):
+    """"This is a class to implement laser blasts for the player
+    TIE fighter (#EmpireDidNothingWrong)."""
+    def __init__(self, x, y):
+        super(Laser, self).__init__()
+        self.surf = pygame.image.load('laser_beam_green.png').convert_alpha()
+        self.surf.set_colorkey((255, 255, 254), RLEACCEL)
+        self.rect = self.surf.get_rect()
+        self.rect.left = x
+        self.rect.top = y
+        self.speed = 15
+    # Define the laser beam's frame updates
+    def update(self):
+        self.rect.move_ip(self.speed, 0)
+        if self.rect.left > screen_width:
+            self.kill()
 # Define Asteroid Class by extending Sprite
 class Asteroid(pygame.sprite.Sprite):
     """ This is the class to create obstacles for the player to dodge.
@@ -111,7 +145,7 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect(
             center = (
                 random.randint(screen_width + 20, screen_width + 100),
-                random.randint(0, screen_height))
+                random.randint(0 + 10, screen_height - 10))
             )
         self.speed = random.randint(3,6)
         self.last_shot = pygame.time.get_ticks()
@@ -130,7 +164,7 @@ class Enemy(pygame.sprite.Sprite):
     def shoot(self):
         """ Fires enemy lasers"""
         current_time = pygame.time.get_ticks()
-        if current_time - self.last_shot > 1500:
+        if current_time - self.last_shot > 2500:
             self.last_shot = current_time
             laser = EnemyLaser(self.rect.x, self.rect.y)
             enemy_laser_wav.play()
@@ -176,8 +210,6 @@ pygame.time.set_timer(ADDGALAXY, 9000)
 # Create a custom event for adding a new enemy
 ADDENEMY = pygame.USEREVENT + 3
 pygame.time.set_timer(ADDENEMY, 4500)
-#Instantiate the Player
-player = Player()
 
     ### Sprite Groups
 # Create groups to hold asteroid sprites and all sprites
@@ -187,12 +219,17 @@ asteroids = pygame.sprite.Group()
 galaxies = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
-all_sprites.add(player)
 enemy_lasers = pygame.sprite.Group()
+player_lasers = pygame.sprite.Group()
 
 # Load sounds for the game here
 enemy_laser_wav = pygame.mixer.Sound('fire_laser.wav')
 explosion_wav = pygame.mixer.Sound('explosion.wav')
+player_laser_wav = pygame.mixer.Sound('laser_fire_2.wav')
+
+#Instantiate the Player
+player = Player()
+all_sprites.add(player)
 
     ### Game Loop
 # Run variable for main loop
@@ -236,8 +273,10 @@ while running:
     galaxies.update()
     # Update enemy lasers
     enemy_lasers.update()    
+    # Update player_lasers
+    player_lasers.update() 
     #Update player sprite based on player keypresses
-    player.update(pressed_keys)    
+    player.update(pressed_keys)   
     # Fill the background color 
     screen.fill((0, 0, 0))    
     # Draw the player on the screen
@@ -257,6 +296,12 @@ while running:
         explosion_wav.play()
         player.kill()
         running = False
+    player_shoot_enemy = pygame.sprite.groupcollide(
+        player_lasers, enemies, True, True)
+    for hit in player_shoot_enemy:
+        explosion_wav.play()
+    collisions = pygame.sprite.groupcollide(
+        player_lasers, asteroids, True, False)
         
     # Check for NPO collisions
     enemy_hit_asteroid = pygame.sprite.groupcollide(
