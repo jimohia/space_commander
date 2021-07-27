@@ -40,7 +40,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super(Player, self).__init__()
         self.surf = pygame.image.load('tie_fighter.png').convert_alpha()
-        self.surf.set_colorkey((255, 255, 254), RLEACCEL)
+        self.surf.set_colorkey((255, 255, 255), RLEACCEL)
         self.rect = self.surf.get_rect()
         self.last_shot = pygame.time.get_ticks()
         # Sprite Groups for Player Lasers
@@ -86,7 +86,7 @@ class Laser(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super(Laser, self).__init__()
         self.surf = pygame.image.load('laser_beam_green.png').convert_alpha()
-        self.surf.set_colorkey((255, 255, 254), RLEACCEL)
+        self.surf.set_colorkey((255, 255, 255), RLEACCEL)
         self.rect = self.surf.get_rect()
         self.rect.left = x
         self.rect.top = y
@@ -124,7 +124,7 @@ class Galaxy(pygame.sprite.Sprite):
     def __init__(self):
         super(Galaxy, self).__init__()
         self.surf = pygame.image.load('galaxy.png').convert_alpha()
-        self.surf.set_colorkey((255, 255, 254), RLEACCEL)
+        self.surf.set_colorkey((255, 255, 255), RLEACCEL)
         self.rect = self.surf.get_rect(
             center = (
                 random.randint(screen_width+20, screen_width + 100),
@@ -143,7 +143,7 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self):
         super(Enemy, self).__init__()
         self.surf = pygame.image.load('x_wing.png').convert_alpha()
-        self.surf.set_colorkey((255, 255, 254), RLEACCEL)
+        self.surf.set_colorkey((255, 255, 255), RLEACCEL)
         self.rect = self.surf.get_rect(
             center = (
                 random.randint(screen_width + 20, screen_width + 100),
@@ -173,7 +173,30 @@ class Enemy(pygame.sprite.Sprite):
             enemy_laser_wav.set_volume(0.5)
             self.sprites.add(laser)
             self.lasers.add(laser)
+# This is ugly but here I define a Y-wing, and lament not making it a subclass of Enemy
+class Y_wing(pygame.sprite.Sprite):
+    """ This is a class to implement Y-wings."""
+    def __init__(self):
+        super(Y_wing, self).__init__()
+        self.surf = pygame.image.load('y_wing.png').convert_alpha()
+        self.surf.set_colorkey((255, 255, 255), RLEACCEL)
+        self.rect = self.surf.get_rect(
+            center = (
+                random.randint(screen_width + 20, screen_width + 100),
+                random.randint(0 + 10, screen_height - 10))
+            )
+        self.speed = random.randint(2,4)
+        self.last_shot = pygame.time.get_ticks()
         
+        # Sprite Groups for Enemy Lasers
+        self.sprites = all_sprites
+        
+    # Define the enemy's frame updates based on speed
+    def update(self):
+        self.rect.move_ip(-self.speed, 0)
+        if self.rect.right < 0:
+            self.kill()
+    
 # Define EnemyLaser Class by extending Sprite
 class EnemyLaser(pygame.sprite.Sprite):
     """"This is a class to implement laser blasts for the enemy
@@ -212,6 +235,9 @@ pygame.time.set_timer(ADDGALAXY, 9000)
 # Create a custom event for adding a new enemy
 ADDENEMY = pygame.USEREVENT + 3
 pygame.time.set_timer(ADDENEMY, 4500)
+# Create Y_wings
+ADDYWING = pygame.USEREVENT + 4
+pygame.time.set_timer(ADDYWING, 5500)
 
     ### Sprite Groups
 # Create groups to hold asteroid sprites and all sprites
@@ -259,7 +285,12 @@ while running:
             # Create the new enemy and add it to the sprites group
             new_enemy = Enemy()
             enemies.add(new_enemy)
-            all_sprites.add(new_enemy)     
+            all_sprites.add(new_enemy)
+        # Add a Y-wing?
+        elif event.type == ADDYWING:
+            new_y_wing = Y_wing()
+            enemies.add(new_y_wing)
+            all_sprites.add(new_y_wing)
         # Add a new background galaxy?
         elif event.type == ADDGALAXY:
             new_galaxy = Galaxy()
