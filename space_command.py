@@ -46,6 +46,8 @@ class Player(pygame.sprite.Sprite):
         # Sprite Groups for Player Lasers
         self.sprites = all_sprites
         self.lasers = player_lasers
+        self.rect.centerx = 10
+        self.rect.centery = screen_height / 2
     # Def func() Move the Sprite based on player keypresses
     def update(self, pressed_keys):
         if pressed_keys[K_UP]:
