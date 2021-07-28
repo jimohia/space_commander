@@ -138,10 +138,21 @@ class Galaxy(pygame.sprite.Sprite):
             self.kill()
 # Define Enemy Class by extending Sprite
 class Enemy(pygame.sprite.Sprite):
-    """ This is a class to implement enemy ships. I hope to extend
-    this class to encompass multiple types of enemy ships"""
+    """ This is a class to implement enemy ships. This class is 
+    extended to encompass multiple types of enemy ships"""
     def __init__(self):
         super(Enemy, self).__init__()
+        # Class attributes
+        self.last_shot = pygame.time.get_ticks()        
+        # Sprite Groups for Enemy Lasers
+        self.sprites = all_sprites
+        self.lasers = enemy_lasers
+        
+# this is the X-wing subclass
+class X_wing(Enemy):
+    """Implements a class for X-wings, a subclass of Enemy"""
+    def __init__(self):
+        super(X_wing, self).__init__()
         self.surf = pygame.image.load('x_wing.png').convert_alpha()
         self.surf.set_colorkey((255, 255, 255), RLEACCEL)
         self.rect = self.surf.get_rect(
@@ -150,12 +161,6 @@ class Enemy(pygame.sprite.Sprite):
                 random.randint(0 + 10, screen_height - 10))
             )
         self.speed = random.randint(3,6)
-        self.last_shot = pygame.time.get_ticks()
-        
-        # Sprite Groups for Enemy Lasers
-        self.sprites = all_sprites
-        self.lasers = enemy_lasers
-        
     # Define the enemy's frame updates based on speed
     def update(self):
         self.rect.move_ip(-self.speed, 0)
@@ -173,8 +178,8 @@ class Enemy(pygame.sprite.Sprite):
             enemy_laser_wav.set_volume(0.5)
             self.sprites.add(laser)
             self.lasers.add(laser)
-# This is ugly but here I define a Y-wing, and lament not making it a subclass of Enemy
-class Y_wing(pygame.sprite.Sprite):
+            
+class Y_wing(Enemy):
     """ This is a class to implement Y-wings."""
     def __init__(self):
         super(Y_wing, self).__init__()
@@ -187,9 +192,6 @@ class Y_wing(pygame.sprite.Sprite):
             )
         self.speed = random.randint(2,4)
         self.last_shot = pygame.time.get_ticks()
-        
-        # Sprite Groups for Enemy Lasers
-        self.sprites = all_sprites
         
     # Define the enemy's frame updates based on speed
     def update(self):
@@ -283,7 +285,7 @@ while running:
         # Add a new enemy?
         elif event.type == ADDENEMY:
             # Create the new enemy and add it to the sprites group
-            new_enemy = Enemy()
+            new_enemy = X_wing()
             enemies.add(new_enemy)
             all_sprites.add(new_enemy)
         # Add a Y-wing?
