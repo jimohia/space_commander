@@ -313,11 +313,14 @@ while running:
     #Update player sprite based on player keypresses
     player.update(pressed_keys)   
     # Fill the background color 
-    screen.fill((0, 0, 0))    
+    screen.fill((0, 0, 0))
+    #Blitting
+    # Draw the Background
+    background =  pygame.image.load('star_field.png').convert_alpha()
+    screen.blit(background, (0, 0))
     # Draw the player on the screen
     for entity in all_sprites:
         screen.blit(entity.surf, (entity.rect)) 
-        
     # Check for player collisions
     if pygame.sprite.spritecollideany(player, asteroids):
         explosion_wav.play()
