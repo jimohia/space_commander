@@ -344,6 +344,7 @@ while running:
     # Draw the player on the screen
     for entity in all_sprites:
         screen.blit(entity.surf, (entity.rect)) 
+        
     # Check for player collisions
     if pygame.sprite.spritecollideany(player, asteroids):
         explosion_wav.play()
