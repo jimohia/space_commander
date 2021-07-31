@@ -33,6 +33,26 @@ pygame.mixer.music.play(loops = -1)
 pygame.init()
 
     ### Class Creation
+# Define a background Class
+class Background():
+    """"This class is to implement horizontal scrolling backgrounds."""
+    def __init__(self):
+        self.surf = pygame.image.load('star_field.png').convert_alpha()
+        self.rect = self.surf.get_rect()
+        self.x_1 = 0
+        self.y_1 = 0
+        self.x_2 = screen_width
+        self.y_2 = 0
+        self.speed = 1
+    def update(self):
+        self.x_1 -= self.speed
+        self.x_2 -= self.speed
+        if self.x_1 <= -screen_width:
+            self.x_1 = 0
+            self.x_2 = screen_width
+    def render(self):
+        screen.blit(self.surf, (self.x_1, self.y_1))
+        screen.blit(self.surf, (self.x_2, self.y_2))
 # Define player class by extending Sprite
 class Player(pygame.sprite.Sprite):
     """" This is the class for the player, there should
@@ -261,6 +281,9 @@ player_laser_wav = pygame.mixer.Sound('laser_fire_2.wav')
 player = Player()
 all_sprites.add(player)
 
+# Set Background
+background = Background()
+
     ### Game Loop
 # Run variable for main loop
 running = True
@@ -315,9 +338,9 @@ while running:
     # Fill the background color 
     screen.fill((0, 0, 0))
     #Blitting
-    # Draw the Background
-    background =  pygame.image.load('star_field.png').convert_alpha()
-    screen.blit(background, (0, 0))
+    # Update the Background
+    background.update()
+    background.render()
     # Draw the player on the screen
     for entity in all_sprites:
         screen.blit(entity.surf, (entity.rect)) 
