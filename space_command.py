@@ -43,7 +43,7 @@ class Background():
         self.y_1 = 0
         self.x_2 = screen_width
         self.y_2 = 0
-        self.speed = 1
+        self.speed = 0.5
     def update(self):
         self.x_1 -= self.speed
         self.x_2 -= self.speed
@@ -110,7 +110,7 @@ class Laser(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect()
         self.rect.left = x
         self.rect.top = y
-        self.speed = 15
+        self.speed = 8
     # Define the laser beam's frame updates
     def update(self):
         self.rect.move_ip(self.speed, 0)
@@ -127,15 +127,29 @@ class Asteroid(pygame.sprite.Sprite):
         self.surf.set_colorkey((255, 255, 255), RLEACCEL)
         self.rect = self.surf.get_rect(
             center = (
-                random.randint(screen_width + 20, screen_width + 100),
-                random.randint(0, screen_height))
+                random.randint(screen_width - 200, screen_width + 20),
+                random.randint(0, 10))
                 )
-        self.speed = random.randint(4,6)        
+        self.speed = random.randint(1,2)
+        self.orig_image = self.surf
+        self.angle = 0        
     # Define the Asteroid's frame updates based on 'speed'
     def update(self):
-        self.rect.move_ip(-self.speed, 0)
+        self.rect.move_ip(-self.speed, self.speed)
+        self.angle += 8
+        self.rotate()
         if self.rect.right < 0:
             self.kill()
+        elif self.rect.top > screen_height:
+            self.kill()
+    def rotate(self):
+        """Rotate the image of the sprite around its center."""
+        # `rotozoom` usually looks nicer than `rotate`. Pygame's rotation
+        # functions return new images and don't modify the originals.
+        self.image = pygame.transform.rotozoom(self.orig_image, self.angle, 1)
+        # Create a new rect with the center of the old rect.
+        self.rect = self.image.get_rect(center=self.rect.center)
+        self.surf = self.image
 # Define Galaxy Class by extending Sprite
 class Galaxy(pygame.sprite.Sprite):
     """ This is a class to implement background images that scroll
@@ -180,7 +194,7 @@ class X_wing(Enemy):
                 random.randint(screen_width + 20, screen_width + 100),
                 random.randint(0 + 10, screen_height - 10))
             )
-        self.speed = random.randint(3,6)
+        self.speed = random.randint(2,3)
     # Define the enemy's frame updates based on speed
     def update(self):
         self.rect.move_ip(-self.speed, 0)
@@ -210,7 +224,7 @@ class Y_wing(Enemy):
                 random.randint(screen_width + 20, screen_width + 100),
                 random.randint(0 + 10, screen_height - 10))
             )
-        self.speed = random.randint(2,4)
+        self.speed = random.randint(1,2)
         self.last_shot = pygame.time.get_ticks()
         
     # Define the enemy's frame updates based on speed
@@ -230,7 +244,7 @@ class EnemyLaser(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect()
         self.rect.right = x
         self.rect.top = y
-        self.speed = 10
+        self.speed = 5
     # Define the laser beam's frame updates
     def update(self):
         self.rect.move_ip(-self.speed, 0)
@@ -250,7 +264,7 @@ clock = pygame.time.Clock()
     ### Instantiations and Instancing Events
 # Create a custom event for adding a new asteroid
 ADDASTEROID = pygame.USEREVENT + 1
-pygame.time.set_timer(ADDASTEROID, 750)
+pygame.time.set_timer(ADDASTEROID, 2500)
 # Create a custom event for adding a background galaxy
 ADDGALAXY = pygame.USEREVENT + 2
 pygame.time.set_timer(ADDGALAXY, 9000)
@@ -344,7 +358,6 @@ while running:
     # Draw the player on the screen
     for entity in all_sprites:
         screen.blit(entity.surf, (entity.rect)) 
-        
     # Check for player collisions
     if pygame.sprite.spritecollideany(player, asteroids):
         explosion_wav.play()
@@ -380,7 +393,7 @@ while running:
     # Flip (update) the display
     pygame.display.flip()    
     #Lock framerate
-    clock.tick(30)
+    clock.tick(60)
 
     ### End and Exit
 # Stop the music
