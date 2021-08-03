@@ -125,11 +125,13 @@ class Asteroid(pygame.sprite.Sprite):
         super(Asteroid, self).__init__()
         self.surf = pygame.image.load('asteroid.png').convert_alpha()
         self.surf.set_colorkey((255, 255, 255), RLEACCEL)
+        self.x = random.randint(10, screen_width + 300)
+        if self.x < screen_width:
+            self.y = -10
+        else:
+            self.y = random.randint(0, 0.5 * screen_height)
         self.rect = self.surf.get_rect(
-            center = (
-                random.randint(screen_width - 200, screen_width + 20),
-                random.randint(0, 10))
-                )
+            center = (self.x, self.y))
         self.speed = random.randint(1,2)
         self.orig_image = self.surf
         self.angle = 0        
@@ -264,7 +266,7 @@ clock = pygame.time.Clock()
     ### Instantiations and Instancing Events
 # Create a custom event for adding a new asteroid
 ADDASTEROID = pygame.USEREVENT + 1
-pygame.time.set_timer(ADDASTEROID, 2500)
+pygame.time.set_timer(ADDASTEROID, 500)
 # Create a custom event for adding a background galaxy
 ADDGALAXY = pygame.USEREVENT + 2
 pygame.time.set_timer(ADDGALAXY, 9000)
