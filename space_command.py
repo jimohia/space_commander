@@ -24,13 +24,20 @@ from pygame.locals import (
     KEYDOWN,
     QUIT    
     )
-
+# Set Colors 
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+GRAY = (200, 200, 200)
+YELLOW = (255, 255, 0)
 #Load pygame mixer for songs and sfx
 pygame.mixer.init()
 pygame.mixer.music.load('space_song.wav')
 pygame.mixer.music.play(loops = -1)
 # Initialize Pygame
 pygame.init()
+pygame.font.init()
 
     ### Class Creation
 # Define a background Class
@@ -293,16 +300,47 @@ enemy_laser_wav = pygame.mixer.Sound('fire_laser.wav')
 explosion_wav = pygame.mixer.Sound('explosion.wav')
 player_laser_wav = pygame.mixer.Sound('laser_fire_2.wav')
 
-#Instantiate the Player
-player = Player()
-all_sprites.add(player)
-
 # Set Background
 background = Background()
 
-    ### Game Loop
 # Run variable for main loop
+menu = True
 running = True
+
+# Start Menu
+sysfont = pygame.font.get_default_font()
+while menu == True:
+    font = pygame.font.SysFont(sysfont, 24)
+    title = font.render('#EmpireDidNothingWrong', True, YELLOW)
+    img = font.render('Hit Space to Start. Escape to Exit', True, BLUE)
+    screen.blit(title, (screen_width/2-(title.get_width()/2), 
+                      screen_height/2 - (title.get_height()/2))
+                )
+   
+    screen.blit(img, (screen_width/2-(img.get_width()/2), 
+                      screen_height/2 - (img.get_height()/2)
+                      + (title.get_height()))
+                )
+    pygame.display.update()
+    # Update the Background
+    background.update()
+    background.render()
+    clock.tick(60)
+    for event in pygame.event.get():
+        if event.type == KEYDOWN:
+            if event.key == K_SPACE:
+                menu = False
+            elif event.key == K_ESCAPE:
+                running = False
+                menu = False
+        elif event.type == pygame.QUIT:
+            running = False
+            menu = False
+
+#Instantiate the Player
+player = Player()
+all_sprites.add(player)
+    ### Game Loop
 # Main loop
 while running:
     # Run event handler
