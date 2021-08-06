@@ -306,6 +306,7 @@ background = Background()
 # Run variable for main loop
 menu = True
 running = True
+score_screen = True
 
 # Start Menu
 sysfont = pygame.font.get_default_font()
@@ -313,7 +314,7 @@ while menu == True:
     font = pygame.font.SysFont(sysfont, 24)
     title = font.render('#EmpireDidNothingWrong', True, YELLOW)
     img = font.render('Hit Space to Start. Escape to Exit', True, BLUE)
-    screen.blit(title, (screen_width/2-(title.get_width()/2), 
+    screen.blit(title, (screen_width/2 - (title.get_width()/2), 
                       screen_height/2 - (title.get_height()/2))
                 )
    
@@ -340,6 +341,7 @@ while menu == True:
 #Instantiate the Player
 player = Player()
 all_sprites.add(player)
+score = 0
     ### Game Loop
 # Main loop
 while running:
@@ -415,6 +417,7 @@ while running:
         player_lasers, enemies, True, True)
     for hit in player_shoot_enemy:
         explosion_wav.play()
+        score = score + 1
     collisions = pygame.sprite.groupcollide(
         player_lasers, asteroids, True, False)
         
@@ -435,10 +438,42 @@ while running:
     #Lock framerate
     clock.tick(60)
 
+# Score Screen
+while score_screen == True:
+    font = pygame.font.SysFont(sysfont, 24)
+    score_img = font.render('You Destroyed ' + str(score) + ' Rebel Scum', 
+                        True, YELLOW)
+    end_img = font.render('Hit Escape to Exit', True, BLUE)
+    screen.blit(end_img, (screen_width/2-(end_img.get_width()/2), 
+                      screen_height/2 - (end_img.get_height()/2)
+                      + (score_img.get_height()))
+                )
+    screen.blit(score_img, (screen_width/2 - (score_img.get_width()/2), 
+                      screen_height/2 - (score_img.get_height()/2))
+                )
+    pygame.display.update()
+    # Update the Background
+    background.update()
+    background.render()
+    clock.tick(60)
+    for event in pygame.event.get():
+        if event.type == KEYDOWN:
+            if event.key == K_SPACE:
+                score_screen = False
+            elif event.key == K_ESCAPE:
+                running = False
+                score_screen = False
+        elif event.type == pygame.QUIT:
+            running = False
+            score_screen = False
+
+
+
     ### End and Exit
 # Stop the music
 pygame.mixer.music.stop()
 pygame.mixer.quit()    
 #Done! Time to quit
+print(score)
 pygame.quit()
 
