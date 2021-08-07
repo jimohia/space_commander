@@ -267,6 +267,32 @@ class Y_wing_explode(pygame.sprite.Sprite):
             else:
                 self.surf = self.anim_image[self.img_ind]                        
                 print('It worked')
+# Define X_wing_explode class
+class X_wing_explode(pygame.sprite.Sprite):
+    """ This class is to explode Y-wings when destroyed"""
+    def __init__(self, x, y):
+        super(X_wing_explode, self).__init__()
+        self.surf = pygame.image.load('x_wing_explosion_1.png').convert_alpha()
+        self.anim_image = []
+        for filename in ['x_wing_explosion_2.png',
+                      'x_wing_explosion_3.png',
+                      'x_wing_explosion_4.png']:
+            self.anim_image.append(pygame.image.load(filename).convert_alpha())
+        self.rect = self.surf.get_rect()
+        self.rect.centerx = x
+        self.rect.centery = y
+        self.timer = pygame.time.get_ticks()
+        self.img_ind = -1
+    def update(self):
+        self.current_time = pygame.time.get_ticks()
+        if self.current_time - self.timer > 200:
+            self.timer = pygame.time.get_ticks()            
+            self.img_ind = self.img_ind + 1
+            if self.img_ind == len(self.anim_image):
+                    self.kill()
+            else:
+                self.surf = self.anim_image[self.img_ind]                        
+                print('It worked')
 # Define EnemyLaser Class by extending Sprite
 class EnemyLaser(pygame.sprite.Sprite):
     """"This is a class to implement laser blasts for the enemy
@@ -319,7 +345,10 @@ enemies = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 enemy_lasers = pygame.sprite.Group()
 player_lasers = pygame.sprite.Group()
-explodes = pygame.sprite.Group()
+y_explodes = pygame.sprite.Group()
+x_explodes = pygame.sprite.Group()
+x_wings = pygame.sprite.Group()
+y_wings = pygame.sprite.Group()
 
 # Load sounds for the game here
 enemy_laser_wav = pygame.mixer.Sound('fire_laser.wav')
@@ -389,14 +418,16 @@ while running:
             all_sprites.add(new_asteroid)
         # Add a new enemy?
         elif event.type == ADDENEMY:
-            # Create the new enemy and add it to the sprites group
+            # Create the new X-wing and add it to the sprites group
             new_enemy = X_wing()
             enemies.add(new_enemy)
+            x_wings.add(new_enemy)
             all_sprites.add(new_enemy)
         # Add a Y-wing?
         elif event.type == ADDYWING:
             new_y_wing = Y_wing()
             enemies.add(new_y_wing)
+            y_wings.add(new_y_wing)
             all_sprites.add(new_y_wing)
         # Add a new background galaxy?
         elif event.type == ADDGALAXY:
@@ -408,7 +439,8 @@ while running:
     # Update asteroid position
     asteroids.update()
     # Update Explostions
-    explodes.update()
+    y_explodes.update()
+    x_explodes.update()
     # Update enemies position
     enemies.update()    
     # Update Galaxy background images
@@ -441,14 +473,23 @@ while running:
         explosion_wav.play()
         player.kill()
         running = False
-    player_shoot_enemy = pygame.sprite.groupcollide(
-        player_lasers, enemies, True, True)
-    for hit in player_shoot_enemy:
+        ### Need to parse out x and y wings
+    player_shoot_y_wing = pygame.sprite.groupcollide(
+        player_lasers, y_wings, True, True)
+    for hit in player_shoot_y_wing:
         explosion_wav.play()
         score = score + 1
         y_exp = Y_wing_explode(hit.rect.centerx, hit.rect.centery)
         all_sprites.add(y_exp)
-        explodes.add(y_exp)
+        y_explodes.add(y_exp)
+    player_shoot_x_wing = pygame.sprite.groupcollide(
+        player_lasers, x_wings, True, True)
+    for hit in player_shoot_x_wing:
+        explosion_wav.play()
+        score = score + 1
+        x_exp = X_wing_explode(hit.rect.centerx, hit.rect.centery)
+        all_sprites.add(x_exp)
+        x_explodes.add(x_exp)
     collisions = pygame.sprite.groupcollide(
         player_lasers, asteroids, True, False)
         
@@ -506,6 +547,6 @@ pygame.mixer.music.stop()
 pygame.mixer.quit()    
 #Done! Time to quit
 print(score)
-print(explodes)
+print(x_explodes)
 pygame.quit()
 
