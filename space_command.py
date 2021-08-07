@@ -173,7 +173,7 @@ class Galaxy(pygame.sprite.Sprite):
                 random.randint(screen_width+20, screen_width + 100),
                 random.randint(0, screen_height))
             )
-        self.speed = random.randint(1,2)        
+        self.speed = 1        
     # Define the Galaxy's frame updates based on 'speed'
     def update(self):
         self.rect.move_ip(-self.speed, 0)
@@ -241,7 +241,32 @@ class Y_wing(Enemy):
         self.rect.move_ip(-self.speed, 0)
         if self.rect.right < 0:
             self.kill()
-    
+# Define Y-Wing Explosion Class
+class Y_wing_explode(pygame.sprite.Sprite):
+    """ This class is to explode Y-wings when destroyed"""
+    def __init__(self, x, y):
+        super(Y_wing_explode, self).__init__()
+        self.surf = pygame.image.load('y_wing_explosion_1.png').convert_alpha()
+        self.anim_image = []
+        for filename in ['y_wing_explosion_2.png',
+                      'y_wing_explosion_3.png',
+                      'y_wing_explosion_4.png']:
+            self.anim_image.append(pygame.image.load(filename).convert_alpha())
+        self.rect = self.surf.get_rect()
+        self.rect.centerx = x
+        self.rect.centery = y
+        self.timer = pygame.time.get_ticks()
+        self.img_ind = -1
+    def update(self):
+        self.current_time = pygame.time.get_ticks()
+        if self.current_time - self.timer > 200:
+            self.timer = pygame.time.get_ticks()            
+            self.img_ind = self.img_ind + 1
+            if self.img_ind == len(self.anim_image):
+                    self.kill()
+            else:
+                self.surf = self.anim_image[self.img_ind]                        
+                print('It worked')
 # Define EnemyLaser Class by extending Sprite
 class EnemyLaser(pygame.sprite.Sprite):
     """"This is a class to implement laser blasts for the enemy
@@ -273,7 +298,7 @@ clock = pygame.time.Clock()
     ### Instantiations and Instancing Events
 # Create a custom event for adding a new asteroid
 ADDASTEROID = pygame.USEREVENT + 1
-pygame.time.set_timer(ADDASTEROID, 500)
+pygame.time.set_timer(ADDASTEROID, 50000)
 # Create a custom event for adding a background galaxy
 ADDGALAXY = pygame.USEREVENT + 2
 pygame.time.set_timer(ADDGALAXY, 9000)
@@ -294,6 +319,7 @@ enemies = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 enemy_lasers = pygame.sprite.Group()
 player_lasers = pygame.sprite.Group()
+explodes = pygame.sprite.Group()
 
 # Load sounds for the game here
 enemy_laser_wav = pygame.mixer.Sound('fire_laser.wav')
@@ -381,6 +407,8 @@ while running:
     pressed_keys = pygame.key.get_pressed()    
     # Update asteroid position
     asteroids.update()
+    # Update Explostions
+    explodes.update()
     # Update enemies position
     enemies.update()    
     # Update Galaxy background images
@@ -418,6 +446,9 @@ while running:
     for hit in player_shoot_enemy:
         explosion_wav.play()
         score = score + 1
+        y_exp = Y_wing_explode(hit.rect.centerx, hit.rect.centery)
+        all_sprites.add(y_exp)
+        explodes.add(y_exp)
     collisions = pygame.sprite.groupcollide(
         player_lasers, asteroids, True, False)
         
@@ -475,5 +506,6 @@ pygame.mixer.music.stop()
 pygame.mixer.quit()    
 #Done! Time to quit
 print(score)
+print(explodes)
 pygame.quit()
 
