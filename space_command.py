@@ -105,9 +105,10 @@ class Player(pygame.sprite.Sprite):
             player_laser_wav.play()
             player_laser_wav.set_volume(0.5)
             self.sprites.add(laser)
-            self.lasers.add(laser)    
+            self.lasers.add(laser)
 # Define Laser Class by extending Sprite
 class Laser(pygame.sprite.Sprite):
+    count_laser = 0
     """"This is a class to implement laser blasts for the player
     TIE fighter (#EmpireDidNothingWrong)."""
     def __init__(self, x, y):
@@ -118,6 +119,8 @@ class Laser(pygame.sprite.Sprite):
         self.rect.left = x
         self.rect.top = y
         self.speed = 8
+        self.count_laser = Laser.count_laser
+        Laser.count_laser += 1
     # Define the laser beam's frame updates
     def update(self):
         self.rect.move_ip(self.speed, 0)
@@ -266,7 +269,6 @@ class Y_wing_explode(pygame.sprite.Sprite):
                     self.kill()
             else:
                 self.surf = self.anim_image[self.img_ind]                        
-                print('It worked')
 # Define X_wing_explode class
 class X_wing_explode(pygame.sprite.Sprite):
     """ This class is to explode Y-wings when destroyed"""
@@ -292,7 +294,6 @@ class X_wing_explode(pygame.sprite.Sprite):
                     self.kill()
             else:
                 self.surf = self.anim_image[self.img_ind]                        
-                print('It worked')
 # Define EnemyLaser Class by extending Sprite
 class EnemyLaser(pygame.sprite.Sprite):
     """"This is a class to implement laser blasts for the enemy
@@ -310,7 +311,53 @@ class EnemyLaser(pygame.sprite.Sprite):
         self.rect.move_ip(-self.speed, 0)
         if self.rect.right < 0:
             self.kill()
+class Death_star(pygame.sprite.Sprite):
+    """ This is a class to implement Death Star."""
+    def __init__(self):
+        super(Death_star, self).__init__()
+        self.surf = pygame.image.load('death_star.png').convert_alpha()
+        self.surf.set_colorkey((255, 255, 255), RLEACCEL)
+        self.rect = self.surf.get_rect(center = (100, 100))
+        self.speed = 0
+        self.timer = pygame.time.get_ticks()
         
+    # Define the enemy's frame updates based on speed
+    def update(self):
+        self.rect.move_ip(-self.speed, 0)
+        self.current_time = pygame.time.get_ticks()
+        if self.current_time - self.timer > 5000:
+            boom = Death_star_explode()
+            death_star_explode.add(boom)
+            self.kill()
+        if self.rect.right < 0:
+            self.kill()
+        
+            
+class Death_star_explode(pygame.sprite.Sprite):
+    """ This class is to explode Death Star at end screen"""
+    def __init__(self):
+        super(Death_star_explode, self).__init__()
+        self.surf = pygame.image.load('death_star_explosion_1.png').convert_alpha()
+        self.anim_image = []
+        for filename in ['death_star_explosion_2.png',
+                      'death_star_explosion_3.png',
+                      'death_star_explosion_4.png',
+                      'death_star_explosion_5.png',
+                      'death_star_explosion_6.png',
+                      'death_star_explosion_7.png']:
+            self.anim_image.append(pygame.image.load(filename).convert_alpha())
+        self.rect = self.surf.get_rect(center = (100, 100))
+        self.timer = pygame.time.get_ticks()
+        self.img_ind = -1
+    def update(self):
+        self.current_time = pygame.time.get_ticks()
+        if self.current_time - self.timer > 200:
+            self.timer = pygame.time.get_ticks()            
+            self.img_ind = self.img_ind + 1
+            if self.img_ind == len(self.anim_image):
+                    self.kill()
+            else:
+                self.surf = self.anim_image[self.img_ind]           
 
     ### Clock and Screen    
 # Set Screen Size with Width = 800 & Height = 600
@@ -324,7 +371,7 @@ clock = pygame.time.Clock()
     ### Instantiations and Instancing Events
 # Create a custom event for adding a new asteroid
 ADDASTEROID = pygame.USEREVENT + 1
-pygame.time.set_timer(ADDASTEROID, 50000)
+pygame.time.set_timer(ADDASTEROID, 1500)
 # Create a custom event for adding a background galaxy
 ADDGALAXY = pygame.USEREVENT + 2
 pygame.time.set_timer(ADDGALAXY, 9000)
@@ -349,6 +396,8 @@ y_explodes = pygame.sprite.Group()
 x_explodes = pygame.sprite.Group()
 x_wings = pygame.sprite.Group()
 y_wings = pygame.sprite.Group()
+death_star_explode = pygame.sprite.Group()
+death_star_group = pygame.sprite.Group()
 
 # Load sounds for the game here
 enemy_laser_wav = pygame.mixer.Sound('fire_laser.wav')
@@ -397,6 +446,7 @@ while menu == True:
 player = Player()
 all_sprites.add(player)
 score = 0
+splash = 0
     ### Game Loop
 # Main loop
 while running:
@@ -478,7 +528,7 @@ while running:
         player_lasers, y_wings, True, True)
     for hit in player_shoot_y_wing:
         explosion_wav.play()
-        score = score + 1
+        splash = splash + 1
         y_exp = Y_wing_explode(hit.rect.centerx, hit.rect.centery)
         all_sprites.add(y_exp)
         y_explodes.add(y_exp)
@@ -486,7 +536,7 @@ while running:
         player_lasers, x_wings, True, True)
     for hit in player_shoot_x_wing:
         explosion_wav.play()
-        score = score + 1
+        splash = splash + 1
         x_exp = X_wing_explode(hit.rect.centerx, hit.rect.centery)
         all_sprites.add(x_exp)
         x_explodes.add(x_exp)
@@ -511,20 +561,53 @@ while running:
     clock.tick(60)
 
 # Score Screen
+death_star = Death_star()
+death_star_group.add(death_star)
+screen.fill((0, 0, 0))
+hit_ratio = splash / Laser.count_laser * 100
+score = splash * 1000 * hit_ratio // 100
 while score_screen == True:
     font = pygame.font.SysFont(sysfont, 24)
-    score_img = font.render('You Destroyed ' + str(score) + ' Rebel Scum', 
+    splash_img = font.render('You Destroyed ' + str(splash) + ' Rebel Scum', 
                         True, YELLOW)
+    ratio_img = font.render('Hit Ratio = ' + str(int(hit_ratio)) + '%', True, BLUE)
+    score_img = font.render('Your Score: ' + str(int(score)), True, BLUE)
     end_img = font.render('Hit Escape to Exit', True, BLUE)
-    screen.blit(end_img, (screen_width/2-(end_img.get_width()/2), 
-                      screen_height/2 - (end_img.get_height()/2)
-                      + (score_img.get_height()))
+    
+    ### Screen Blits
+    screen.blit(splash_img, (screen_width/2 - splash_img.get_width()/2, 
+                      screen_height/2 - splash_img.get_height()/2)
                 )
-    screen.blit(score_img, (screen_width/2 - (score_img.get_width()/2), 
-                      screen_height/2 - (score_img.get_height()/2))
+    screen.blit(ratio_img, (screen_width/2 - ratio_img.get_width()/2, 
+                            screen_height/2 - ratio_img.get_height()/2 + 
+                            splash_img.get_height())
+                )    
+    screen.blit(score_img, (screen_width/2 - score_img.get_width()/2,
+                            screen_height/2 - score_img.get_height()/2 +
+                            splash_img.get_height() +
+                            ratio_img.get_height())
+                )    
+    screen.blit(end_img, (screen_width/2-(end_img.get_width()/2),
+                          screen_height/2 - end_img.get_height()/2 + 
+                          splash_img.get_height() + 
+                          ratio_img.get_height() + 
+                          score_img.get_height())
                 )
-    pygame.display.update()
+
+
+    # Draw the player on the screen
+    
+    death_star_group.update()
+    death_star_explode.update()
+#    screen.fill((0, 0, 0))
+    
+    for entity in death_star_explode:
+        screen.blit(entity.surf, (entity.rect))
+    for entity in death_star_group:
+        screen.blit(entity.surf, (entity.rect))
+    pygame.display.flip()
     # Update the Background
+#    screen.fill((0, 0, 0))
     background.update()
     background.render()
     clock.tick(60)
@@ -546,7 +629,10 @@ while score_screen == True:
 pygame.mixer.music.stop()
 pygame.mixer.quit()    
 #Done! Time to quit
-print(score)
-print(x_explodes)
+print(hit_ratio)
+print(Laser.count_laser)
+print(splash)
+print(int(score))
+#print(x_explodes)
 pygame.quit()
 
