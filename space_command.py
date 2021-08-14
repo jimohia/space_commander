@@ -38,6 +38,204 @@ pygame.mixer.music.play(loops = -1)
 # Initialize Pygame
 pygame.init()
 pygame.font.init()
+# Define Round Function
+def Round():
+    """This function is to be called to start a round of the game"""
+    running = True
+    for sprite in all_sprites:
+        sprite.kill()
+    for sprite in death_star_group:
+        sprite.kill()
+    for sprite in death_star_explode:
+        sprite.kill()
+    player = Player()
+    all_sprites.add(player)    
+    score = 0
+    splash = 0
+    Laser.count_laser = 0
+        ### Game Loop
+        # Main loop
+    while running:
+        # Run event handler
+        for event in pygame.event.get():
+            # Did the player depress a key?
+            if event.type == KEYDOWN:
+                # Was it the ESC key?
+                if event.key == K_ESCAPE:
+                    running = False
+                # Did the player click close?        
+                elif event.type == pygame.QUIT:
+                    running = False            
+                    # Add a new asteroid?
+            elif event.type == ADDASTEROID:
+                # Create the new asteroid and add it to the sprites group
+                new_asteroid = Asteroid()
+                asteroids.add(new_asteroid)
+                all_sprites.add(new_asteroid)
+            # Add a new enemy?
+            elif event.type == ADDENEMY:
+                # Create the new X-wing and add it to the sprites group
+                new_enemy = X_wing()
+                enemies.add(new_enemy)
+                x_wings.add(new_enemy)
+                all_sprites.add(new_enemy)
+            # Add a Y-wing?
+            elif event.type == ADDYWING:
+                new_y_wing = Y_wing()
+                enemies.add(new_y_wing)
+                y_wings.add(new_y_wing)
+                all_sprites.add(new_y_wing)
+            # Add a new background galaxy?
+            elif event.type == ADDGALAXY:
+                new_galaxy = Galaxy()
+                galaxies.add(new_galaxy)
+                all_sprites.add(new_galaxy)        
+        # Get the set of pressed keys and store in dictionary
+        pressed_keys = pygame.key.get_pressed()    
+        # Update asteroid position
+        asteroids.update()
+        # Update Explostions
+        y_explodes.update()
+        x_explodes.update()
+        # Update enemies position
+        enemies.update()    
+        # Update Galaxy background images
+        galaxies.update()
+        # Update enemy lasers
+        enemy_lasers.update()    
+        # Update player_lasers
+        player_lasers.update() 
+        #Update player sprite based on player keypresses
+        player.update(pressed_keys)   
+        # Fill the background color 
+        screen.fill((0, 0, 0))
+        #Blitting
+        # Update the Background
+        background.update()
+        background.render()
+        # Draw the player on the screen
+        for entity in all_sprites:
+            screen.blit(entity.surf, (entity.rect)) 
+        # Check for player collisions
+        if pygame.sprite.spritecollideany(player, asteroids):
+            explosion_wav.play()
+            player.kill()
+            running = False
+            Score_screen(splash)
+        if pygame.sprite.spritecollideany(player, enemies):
+            explosion_wav.play()
+            player.kill()
+            running = False
+            Score_screen(splash)
+        if pygame.sprite.spritecollideany(player, enemy_lasers):
+            explosion_wav.play()
+            player.kill()
+            running = False
+            Score_screen(splash)
+        ### Need to parse out x and y wings
+        player_shoot_y_wing = pygame.sprite.groupcollide(
+            player_lasers, y_wings, True, True)
+        for hit in player_shoot_y_wing:
+            explosion_wav.play()
+            splash = splash + 1
+            y_exp = Y_wing_explode(hit.rect.centerx, hit.rect.centery)
+            all_sprites.add(y_exp)
+            y_explodes.add(y_exp)
+        player_shoot_x_wing = pygame.sprite.groupcollide(
+            player_lasers, x_wings, True, True)
+        for hit in player_shoot_x_wing:
+            explosion_wav.play()
+            splash = splash + 1
+            x_exp = X_wing_explode(hit.rect.centerx, hit.rect.centery)
+            all_sprites.add(x_exp)
+            x_explodes.add(x_exp)
+        collisions = pygame.sprite.groupcollide(
+            player_lasers, asteroids, True, False)
+        
+        # Check for NPO collisions
+        enemy_hit_asteroid = pygame.sprite.groupcollide(
+            asteroids, enemies, False, True)
+        for hit in enemy_hit_asteroid:
+            explosion_wav.play()
+        collisions = pygame.sprite.groupcollide(
+            asteroids, enemy_lasers, False, True)
+        enemy_hit_enemy = pygame.sprite.groupcollide(
+            enemies, enemy_lasers, True, True)
+        for hit in enemy_hit_enemy:
+            explosion_wav.play()
+    
+        # Flip (update) the display
+        pygame.display.flip()    
+        #Lock framerate
+        clock.tick(60)
+
+
+def Score_screen(splash):
+    """A function to call the score screen"""
+    # Score Screen
+    score_screen = True
+    death_star = Death_star()
+    death_star_group.add(death_star)
+    screen.fill((0, 0, 0))
+    if Laser.count_laser == 0:
+        hit_ratio = 0
+    else:
+        hit_ratio = splash / (Laser.count_laser) * 100
+    score = splash * 1000 * hit_ratio // 100
+    while score_screen == True:
+        font = pygame.font.SysFont(sysfont, 24)
+        splash_img = font.render('You Destroyed ' + str(splash) + ' Rebel Scum', 
+                                 True, YELLOW)
+        ratio_img = font.render('Hit Ratio = ' + str(int(hit_ratio)) + '%', True, BLUE)
+        score_img = font.render('Your Score: ' + str(int(score)), True, BLUE)
+        end_img = font.render('Hit Escape to Exit, Space to Play Again', True, BLUE)
+    
+        ### Screen Blits
+        screen.blit(splash_img, (screen_width/2 - splash_img.get_width()/2, 
+                                 screen_height/2 - splash_img.get_height()/2)
+                    )
+        screen.blit(ratio_img, (screen_width/2 - ratio_img.get_width()/2, 
+                                screen_height/2 - ratio_img.get_height()/2 + 
+                                splash_img.get_height())
+                    )    
+        screen.blit(score_img, (screen_width/2 - score_img.get_width()/2,
+                                screen_height/2 - score_img.get_height()/2 +
+                                splash_img.get_height() +
+                                ratio_img.get_height())
+                    )    
+        screen.blit(end_img, (screen_width/2-(end_img.get_width()/2),
+                              screen_height/2 - end_img.get_height()/2 + 
+                              splash_img.get_height() + 
+                              ratio_img.get_height() + 
+                              score_img.get_height())
+                    )
+
+
+        # Draw the player on the screen
+    
+        death_star_group.update()
+        death_star_explode.update()
+    
+        for entity in death_star_explode:
+            screen.blit(entity.surf, (entity.rect))
+        for entity in death_star_group:
+            screen.blit(entity.surf, (entity.rect))
+        pygame.display.flip()
+        # Update the Background
+        background.update()
+        background.render()
+        clock.tick(60)
+        for event in pygame.event.get():
+            if event.type == KEYDOWN:
+                if event.key == K_SPACE:
+                    score_screen = False
+                    Round()
+                elif event.key == K_ESCAPE:
+                    running = False
+                    score_screen = False
+                elif event.type == pygame.QUIT:
+                    running = False
+                    score_screen = False
 
     ### Class Creation
 # Define a background Class
@@ -325,7 +523,7 @@ class Death_star(pygame.sprite.Sprite):
     def update(self):
         self.rect.move_ip(-self.speed, 0)
         self.current_time = pygame.time.get_ticks()
-        if self.current_time - self.timer > 5000:
+        if self.current_time - self.timer > 2000:
             boom = Death_star_explode()
             death_star_explode.add(boom)
             self.kill()
@@ -443,200 +641,14 @@ while menu == True:
             running = False
             menu = False
 
-#Instantiate the Player
-player = Player()
-all_sprites.add(player)
-score = 0
-splash = 0
+
     ### Game Loop
-# Main loop
-while running:
-    # Run event handler
-    for event in pygame.event.get():
-        # Did the player depress a key?
-        if event.type == KEYDOWN:
-            # Was it the ESC key?
-            if event.key == K_ESCAPE:
-                running = False
-        # Did the player click close?        
-        elif event.type == pygame.QUIT:
-            running = False            
-        # Add a new asteroid?
-        elif event.type == ADDASTEROID:
-            # Create the new asteroid and add it to the sprites group
-            new_asteroid = Asteroid()
-            asteroids.add(new_asteroid)
-            all_sprites.add(new_asteroid)
-        # Add a new enemy?
-        elif event.type == ADDENEMY:
-            # Create the new X-wing and add it to the sprites group
-            new_enemy = X_wing()
-            enemies.add(new_enemy)
-            x_wings.add(new_enemy)
-            all_sprites.add(new_enemy)
-        # Add a Y-wing?
-        elif event.type == ADDYWING:
-            new_y_wing = Y_wing()
-            enemies.add(new_y_wing)
-            y_wings.add(new_y_wing)
-            all_sprites.add(new_y_wing)
-        # Add a new background galaxy?
-        elif event.type == ADDGALAXY:
-            new_galaxy = Galaxy()
-            galaxies.add(new_galaxy)
-            all_sprites.add(new_galaxy)        
-    # Get the set of pressed keys and store in dictionary
-    pressed_keys = pygame.key.get_pressed()    
-    # Update asteroid position
-    asteroids.update()
-    # Update Explostions
-    y_explodes.update()
-    x_explodes.update()
-    # Update enemies position
-    enemies.update()    
-    # Update Galaxy background images
-    galaxies.update()
-    # Update enemy lasers
-    enemy_lasers.update()    
-    # Update player_lasers
-    player_lasers.update() 
-    #Update player sprite based on player keypresses
-    player.update(pressed_keys)   
-    # Fill the background color 
-    screen.fill((0, 0, 0))
-    #Blitting
-    # Update the Background
-    background.update()
-    background.render()
-    # Draw the player on the screen
-    for entity in all_sprites:
-        screen.blit(entity.surf, (entity.rect)) 
-    # Check for player collisions
-    if pygame.sprite.spritecollideany(player, asteroids):
-        explosion_wav.play()
-        player.kill()
-        running = False
-    if pygame.sprite.spritecollideany(player, enemies):
-        explosion_wav.play()
-        player.kill()
-        running = False
-    if pygame.sprite.spritecollideany(player, enemy_lasers):
-        explosion_wav.play()
-        player.kill()
-        running = False
-        ### Need to parse out x and y wings
-    player_shoot_y_wing = pygame.sprite.groupcollide(
-        player_lasers, y_wings, True, True)
-    for hit in player_shoot_y_wing:
-        explosion_wav.play()
-        splash = splash + 1
-        y_exp = Y_wing_explode(hit.rect.centerx, hit.rect.centery)
-        all_sprites.add(y_exp)
-        y_explodes.add(y_exp)
-    player_shoot_x_wing = pygame.sprite.groupcollide(
-        player_lasers, x_wings, True, True)
-    for hit in player_shoot_x_wing:
-        explosion_wav.play()
-        splash = splash + 1
-        x_exp = X_wing_explode(hit.rect.centerx, hit.rect.centery)
-        all_sprites.add(x_exp)
-        x_explodes.add(x_exp)
-    collisions = pygame.sprite.groupcollide(
-        player_lasers, asteroids, True, False)
-        
-    # Check for NPO collisions
-    enemy_hit_asteroid = pygame.sprite.groupcollide(
-        asteroids, enemies, False, True)
-    for hit in enemy_hit_asteroid:
-        explosion_wav.play()
-    collisions = pygame.sprite.groupcollide(
-        asteroids, enemy_lasers, False, True)
-    enemy_hit_enemy = pygame.sprite.groupcollide(
-        enemies, enemy_lasers, True, True)
-    for hit in enemy_hit_enemy:
-        explosion_wav.play()
-    
-    # Flip (update) the display
-    pygame.display.flip()    
-    #Lock framerate
-    clock.tick(60)
+Round()
 
-# Score Screen
-death_star = Death_star()
-death_star_group.add(death_star)
-screen.fill((0, 0, 0))
-if Laser.count_laser == 0:
-    hit_ratio = 0
-else:
-    hit_ratio = splash / (Laser.count_laser) * 100
-score = splash * 1000 * hit_ratio // 100
-while score_screen == True:
-    font = pygame.font.SysFont(sysfont, 24)
-    splash_img = font.render('You Destroyed ' + str(splash) + ' Rebel Scum', 
-                        True, YELLOW)
-    ratio_img = font.render('Hit Ratio = ' + str(int(hit_ratio)) + '%', True, BLUE)
-    score_img = font.render('Your Score: ' + str(int(score)), True, BLUE)
-    end_img = font.render('Hit Escape to Exit', True, BLUE)
-    
-    ### Screen Blits
-    screen.blit(splash_img, (screen_width/2 - splash_img.get_width()/2, 
-                      screen_height/2 - splash_img.get_height()/2)
-                )
-    screen.blit(ratio_img, (screen_width/2 - ratio_img.get_width()/2, 
-                            screen_height/2 - ratio_img.get_height()/2 + 
-                            splash_img.get_height())
-                )    
-    screen.blit(score_img, (screen_width/2 - score_img.get_width()/2,
-                            screen_height/2 - score_img.get_height()/2 +
-                            splash_img.get_height() +
-                            ratio_img.get_height())
-                )    
-    screen.blit(end_img, (screen_width/2-(end_img.get_width()/2),
-                          screen_height/2 - end_img.get_height()/2 + 
-                          splash_img.get_height() + 
-                          ratio_img.get_height() + 
-                          score_img.get_height())
-                )
-
-
-    # Draw the player on the screen
-    
-    death_star_group.update()
-    death_star_explode.update()
-#    screen.fill((0, 0, 0))
-    
-    for entity in death_star_explode:
-        screen.blit(entity.surf, (entity.rect))
-    for entity in death_star_group:
-        screen.blit(entity.surf, (entity.rect))
-    pygame.display.flip()
-    # Update the Background
-#    screen.fill((0, 0, 0))
-    background.update()
-    background.render()
-    clock.tick(60)
-    for event in pygame.event.get():
-        if event.type == KEYDOWN:
-            if event.key == K_SPACE:
-                score_screen = False
-            elif event.key == K_ESCAPE:
-                running = False
-                score_screen = False
-        elif event.type == pygame.QUIT:
-            running = False
-            score_screen = False
-
-
-
-    ### End and Exit
+### End and Exit
 # Stop the music
 pygame.mixer.music.stop()
 pygame.mixer.quit()    
 #Done! Time to quit
-print(hit_ratio)
-print(Laser.count_laser)
-print(splash)
-print(int(score))
-#print(x_explodes)
 pygame.quit()
 
