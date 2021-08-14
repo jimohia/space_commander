@@ -317,7 +317,7 @@ class Death_star(pygame.sprite.Sprite):
         super(Death_star, self).__init__()
         self.surf = pygame.image.load('death_star.png').convert_alpha()
         self.surf.set_colorkey((255, 255, 255), RLEACCEL)
-        self.rect = self.surf.get_rect(center = (100, 100))
+        self.rect = self.surf.get_rect(center = (175, 175))
         self.speed = 0
         self.timer = pygame.time.get_ticks()
         
@@ -346,18 +346,19 @@ class Death_star_explode(pygame.sprite.Sprite):
                       'death_star_explosion_6.png',
                       'death_star_explosion_7.png']:
             self.anim_image.append(pygame.image.load(filename).convert_alpha())
-        self.rect = self.surf.get_rect(center = (100, 100))
+        self.rect = self.surf.get_rect(center = (175, 175))
         self.timer = pygame.time.get_ticks()
         self.img_ind = -1
     def update(self):
         self.current_time = pygame.time.get_ticks()
-        if self.current_time - self.timer > 200:
+        if self.current_time - self.timer > 150:
             self.timer = pygame.time.get_ticks()            
             self.img_ind = self.img_ind + 1
             if self.img_ind == len(self.anim_image):
                     self.kill()
             else:
-                self.surf = self.anim_image[self.img_ind]           
+                self.surf = self.anim_image[self.img_ind]
+            self.rect = self.surf.get_rect(center = (175, 175))
 
     ### Clock and Screen    
 # Set Screen Size with Width = 800 & Height = 600
@@ -564,7 +565,10 @@ while running:
 death_star = Death_star()
 death_star_group.add(death_star)
 screen.fill((0, 0, 0))
-hit_ratio = splash / Laser.count_laser * 100
+if Laser.count_laser == 0:
+    hit_ratio = 0
+else:
+    hit_ratio = splash / (Laser.count_laser) * 100
 score = splash * 1000 * hit_ratio // 100
 while score_screen == True:
     font = pygame.font.SysFont(sysfont, 24)
